@@ -17,6 +17,11 @@ namespace System.Reflection
         {
             _property = property;
             _metadataLoadContext = metadataLoadContext;
+
+            if (PropertyType == null)
+            {
+
+            }
         }
 
         public override PropertyAttributes Attributes => throw new NotImplementedException();

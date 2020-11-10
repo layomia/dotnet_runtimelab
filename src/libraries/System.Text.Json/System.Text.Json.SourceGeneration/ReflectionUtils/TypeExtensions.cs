@@ -3,6 +3,8 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using Microsoft.CodeAnalysis;
 
@@ -74,6 +76,11 @@ namespace System.Reflection
         {
             if (type is TypeWrapper typeWrapper)
             {
+                if (type.IsArray)
+                {
+                    return "System";
+                }
+
                 INamespaceSymbol root = typeWrapper.GetNamespaceSymbol;
                 if (root == null)
                 {
@@ -100,14 +107,45 @@ namespace System.Reflection
             return type.Namespace;
         }
 
-        public static string GetCompilableUniqueName(this Type type)
+        public static string GetUniqueCompilableTypeName(this Type type) => GetCompilableTypeName(type, type.FullName);
+
+        public static string GetCompilableTypeName(this Type type) => GetCompilableTypeName(type, type.Name);
+
+        private static string GetCompilableTypeName(Type type, string name)
         {
-            if (type is TypeWrapper typeWrapper)
+            if (!type.IsGenericType)
             {
-                return string.Join("", $"{type.Assembly.FullName}.{type.Name}".Split('.', '`'));
+                return name;
             }
 
-            return type.Name;
+            // TODO: Guard upstream against open generics.
+            Debug.Assert(!type.ContainsGenericParameters);
+
+            int backTickIndex = name.IndexOf('`');
+            string baseName = name.Substring(0, backTickIndex);
+
+            return $"{baseName}<{string.Join(",", type.GetGenericArguments().Select(arg => GetUniqueCompilableTypeName(arg)))}>";
+        }
+
+
+        public static string GetUniqueFriendlyTypeName(this Type type)
+        {
+            return GetFriendlyTypeName(type.GetUniqueCompilableTypeName());
+        }
+
+        public static string GetFriendlyTypeName(this Type type)
+        {
+            return GetFriendlyTypeName(type.GetCompilableTypeName());
+        }
+
+        private static string GetFriendlyTypeName(string compilableName)
+        {
+            return compilableName.Replace(".", "").Replace("<", "").Replace(">", "").Replace(",", "").Replace("[]", "Array");
+        }
+
+        public static bool IsNullableValueType(this Type type)
+        {
+            return type.IsGenericTypeDefinition && type.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
     }
 }

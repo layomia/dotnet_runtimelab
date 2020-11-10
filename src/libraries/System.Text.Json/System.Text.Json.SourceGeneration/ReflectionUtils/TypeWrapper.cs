@@ -189,16 +189,25 @@ namespace System.Reflection
         public override PropertyInfo[] GetProperties(BindingFlags bindingAttr)
         {
             var properties = new List<PropertyInfo>();
+
             foreach (ISymbol item in _typeSymbol.GetMembers())
             {
                 if (item is IPropertySymbol property && !property.IsReadOnly)
                 {
                     if ((item.DeclaredAccessibility & Accessibility.Public) == Accessibility.Public)
                     {
-                        properties.Add(new PropertyWrapper(property, _metadataLoadContext));
+                        var propertyWrapper = new PropertyWrapper(property, _metadataLoadContext);
+
+                        if (propertyWrapper.PropertyType.Name == "")
+                        {
+
+                        }
+
+                        properties.Add(propertyWrapper);
                     }
                 }
             }
+
             return properties.ToArray();
         }
 

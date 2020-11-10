@@ -97,6 +97,31 @@ namespace System.Text.Json
                 throw new ArgumentNullException(nameof(jsonTypeInfo));
             }
 
+            return SerializeUsingMetdata(value, jsonTypeInfo);
+        }
+
+        /// <summary>
+        /// todo
+        /// </summary>
+        /// <typeparam name="TValue"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="jsonSerializerContext"></param>
+        /// <returns></returns>
+        public static string Serialize<TValue>(in TValue value, JsonSerializerContext jsonSerializerContext)
+        {
+            if (jsonSerializerContext == null)
+            {
+                throw new ArgumentNullException(nameof(jsonSerializerContext));
+            }
+
+            JsonTypeInfo<TValue>? jsonTypeInfo = jsonSerializerContext.GetJsonClassInfo(typeof(TValue)) as JsonTypeInfo<TValue> ??
+                throw new InvalidOperationException(); // Context returned incompatible class info.
+
+            return SerializeUsingMetdata(value, jsonTypeInfo);
+        }
+
+        private static string SerializeUsingMetdata<TValue>(in TValue value, JsonTypeInfo<TValue> jsonTypeInfo)
+        {
             WriteStack state = default;
             state.Initialize(jsonTypeInfo);
 

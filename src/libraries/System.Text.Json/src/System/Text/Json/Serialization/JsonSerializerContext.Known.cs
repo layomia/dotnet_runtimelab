@@ -36,6 +36,31 @@ namespace System.Text.Json.Serialization
             }
         }
 
+        private JsonTypeInfo<byte[]>? _byteArray;
+        private static JsonTypeInfo<byte[]>? s_byteArray;
+        /// <summary>
+        /// todo
+        /// </summary>
+        public JsonTypeInfo<byte[]> ByteArray
+        {
+            get
+            {
+                if (_byteArray == null)
+                {
+                    {
+                        if (s_byteArray == null)
+                        {
+                            s_byteArray = new JsonValueInfo<byte[]>(new ByteArrayConverter(), _options);
+                        }
+
+                        _byteArray = s_byteArray;
+                    }
+                }
+
+                return _byteArray;
+            }
+        }
+
         private JsonTypeInfo<DateTimeOffset>? _dateTimeOffset;
         private static JsonTypeInfo<DateTimeOffset>? s_dateTimeOffset;
         /// <summary>
@@ -234,6 +259,56 @@ namespace System.Text.Json.Serialization
 
                 return _string;
             }
+        }
+
+        /// <summary>
+        /// todo
+        /// </summary>
+        /// <param name="type"></param>
+        public virtual JsonClassInfo GetJsonClassInfo(Type type)
+        {
+            if (type == typeof(bool))
+            {
+                return Boolean;
+            }
+            else if (type == typeof(byte[]))
+            {
+                return ByteArray;
+            }
+            else if (type == typeof(DateTimeOffset))
+            {
+                return DateTimeOffset;
+            }
+            else if (type == typeof(DateTime))
+            {
+                return DateTime;
+            }
+            else if (type == typeof(int))
+            {
+                return Int32;
+            }
+            else if (type == typeof(long))
+            {
+                return Int64;
+            }
+            else if (type == typeof(float))
+            {
+                return Single;
+            }
+            else if (type == typeof(double))
+            {
+                return Double;
+            }
+            else if (type == typeof(char))
+            {
+                return Char;
+            }
+            else if (type == typeof(string))
+            {
+                return String;
+            }
+
+            throw new NotSupportedException();
         }
     }
 }

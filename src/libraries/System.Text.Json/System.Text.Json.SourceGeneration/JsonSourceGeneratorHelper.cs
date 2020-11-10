@@ -3,6 +3,7 @@
 // See the LICENSE file in the project root for more information.
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using Microsoft.CodeAnalysis;
@@ -12,17 +13,9 @@ namespace System.Text.Json.SourceGeneration
     internal sealed partial class JsonSourceGeneratorHelper
     {
         // Simple handled types with typeinfo.
-        private static readonly HashSet<Type> s_simpleTypes = new HashSet<Type>
-        {
-            typeof(bool),
-            typeof(int),
-            typeof(double),
-            typeof(long),
-            typeof(string),
-            typeof(char),
-            typeof(DateTime),
-            typeof(DateTimeOffset),
-        };
+        private readonly HashSet<Type> _simpleTypes = new();
+
+        private Type _stringType;
 
         // Generation namespace for source generation code.
         const string GenerationNamespace = "JsonCodeGeneration";
@@ -39,14 +32,44 @@ namespace System.Text.Json.SourceGeneration
         // Contains list of diagnostics for the code generator.
         public List<Diagnostic> Diagnostics { get; }
 
-        public JsonSourceGeneratorHelper()
+        public JsonSourceGeneratorHelper(MetadataLoadContext metadataLoadContext)
         {
             // Initialize auto properties.
             Types = new Dictionary<Type, Tuple<string, string>>();
             Diagnostics = new List<Diagnostic>();
 
+            PopulateSimpleTypes(metadataLoadContext);
+
             // Initiate diagnostic descriptors.
             InitializeDiagnosticDescriptors();
+        }
+
+        private void PopulateSimpleTypes(MetadataLoadContext metadataLoadContext)
+        {
+            Debug.Assert(_simpleTypes != null);
+
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(bool)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(byte[])));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(byte)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(char)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(DateTime)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(DateTimeOffset)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(Decimal)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(double)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(Guid)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(short)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(int)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(long)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(sbyte)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(float)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(ushort)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(uint)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(ulong)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(Uri)));
+            _simpleTypes.Add(metadataLoadContext.Resolve(typeof(Version)));
+
+            _stringType = metadataLoadContext.Resolve(typeof(string));
+            _simpleTypes.Add(_stringType);
         }
 
         public class GenerationClassFrame
@@ -83,6 +106,7 @@ namespace System.Text.Json.SourceGeneration
         public string GenerateHelperContextInfo()
         {
             return @$"
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace {GenerationNamespace}
@@ -101,6 +125,14 @@ namespace {GenerationNamespace}
 
                 return s_instance;
             }}
+        }}
+
+        public JsonContext()
+        {{
+        }}
+
+        public JsonContext(JsonSerializerOptions options) : base(options)
+        {{
         }}
     }}
 }}
@@ -202,7 +234,7 @@ namespace {GenerationNamespace}
             {
                 return true;
             }
-            if (type.IsIEnumerable())
+            if (type.IsIEnumerable() && type != _stringType)
             {
                 // todo: Add more support to collections.
                 if (!type.IsIList() && !type.IsIDictionary())
@@ -238,11 +270,11 @@ namespace {GenerationNamespace}
         private bool IsNewType(Type type, Dictionary<Type, string> foundTypes) => (
             !Types.ContainsKey(type) &&
             !foundTypes.ContainsKey(type) &&
-            !s_simpleTypes.Contains(type));
+            !_simpleTypes.Contains(type));
 
         private string GetTypeInfoIdentifier(Type type, Dictionary<Type, string> seenTypes)
         {
-            if (s_simpleTypes.Contains(type))
+            if (_simpleTypes.Contains(type))
             {
                 return type.Name;
             }

@@ -27,6 +27,8 @@ namespace System.Text.Json.SourceGeneration
             JsonSerializableSyntaxReceiver receiver = (JsonSerializableSyntaxReceiver)context.SyntaxReceiver;
             MetadataLoadContext metadataLoadContext = new MetadataLoadContext(context.Compilation);
 
+            //Debugger.Launch();
+
             // Discover serializable types indicated by JsonSerializableAttribute.
             foreach (CompilationUnitSyntax compilationUnit in receiver.CompilationUnits)
             {
@@ -44,9 +46,9 @@ namespace System.Text.Json.SourceGeneration
 
                         // There should be one `Type` parameter in the constructor of the attribute.
                         TypeOfExpressionSyntax typeNode = (TypeOfExpressionSyntax)attributeArgumentNode.ChildNodes().Single();
-                        QualifiedNameSyntax typeQualifiedNameSyntax = (QualifiedNameSyntax)typeNode.ChildNodes().Single();
+                        ExpressionSyntax typeNameSyntax = (ExpressionSyntax)typeNode.ChildNodes().Single();
 
-                        INamedTypeSymbol typeSymbol = (INamedTypeSymbol)compilationSemanticModel.GetTypeInfo(typeQualifiedNameSyntax).ConvertedType;
+                        INamedTypeSymbol typeSymbol = (INamedTypeSymbol)compilationSemanticModel.GetTypeInfo(typeNameSyntax).ConvertedType;
                         Type type = new TypeWrapper(typeSymbol, metadataLoadContext);
                         (FoundTypes ??= new Dictionary<string, Type>())[type.FullName] = type;
                     }
@@ -60,7 +62,7 @@ namespace System.Text.Json.SourceGeneration
 
             Debug.Assert(FoundTypes.Count >= 1);
 
-            JsonSourceGeneratorHelper codegen = new JsonSourceGeneratorHelper();
+            JsonSourceGeneratorHelper codegen = new JsonSourceGeneratorHelper(metadataLoadContext);
 
             // Add base default instance source.
             context.AddSource("BaseClassInfo.g.cs", SourceText.From(codegen.GenerateHelperContextInfo(), Encoding.UTF8));

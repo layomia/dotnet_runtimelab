@@ -37,8 +37,6 @@ namespace System.Reflection
 
         public override Type BaseType => _typeSymbol.BaseType!.AsType(_metadataLoadContext);
 
-        //public override string FullName => Namespace == null ? Name : this.GetFullNamespace() + "." + Name;
-
         public override string FullName => Namespace + "." + Name;
 
         public override Guid GUID => Guid.Empty;
@@ -51,8 +49,6 @@ namespace System.Reflection
             _typeSymbol.ContainingNamespace?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat.WithGlobalNamespaceStyle(SymbolDisplayGlobalNamespaceStyle.OmittedAsContaining))!;
 
         public override Type UnderlyingSystemType => this;
-
-        //public override string Name => _typeSymbol.MetadataName; 
 
         public override string Name
         {
@@ -213,6 +209,7 @@ namespace System.Reflection
             return nestedTypes.ToArray();
         }
 
+        // TODO: make sure to use bindingAttr for correctness. Current implementation assumes public and non-static.
         public override PropertyInfo[] GetProperties(BindingFlags bindingAttr)
         {
             var properties = new List<PropertyInfo>();
@@ -223,14 +220,7 @@ namespace System.Reflection
                 {
                     if ((item.DeclaredAccessibility & Accessibility.Public) == Accessibility.Public)
                     {
-                        var propertyWrapper = new PropertyWrapper(property, _metadataLoadContext);
-
-                        if (propertyWrapper.PropertyType.Name == "")
-                        {
-
-                        }
-
-                        properties.Add(propertyWrapper);
+                        properties.Add(new PropertyWrapper(property, _metadataLoadContext));
                     }
                 }
             }

@@ -114,15 +114,6 @@ namespace System.Text.Json.SourceGeneration.UnitTests
             // Expected warning logs.
             string[] expectedWarningDiagnostics = new string[] { "Did not generate serialization metadata for type ISet<ReferencedAssembly.ActiveOrUpcomingEvent>" };
 
-            //foreach (Diagnostic diag in generatorDiags)
-            //{
-            //    if (diag.Severity == DiagnosticSeverity.Warning)
-            //    {
-            //        Console.WriteLine(diag.GetMessage());
-            //    }
-            //    //Console.WriteLine(diag.GetMessage());
-            //}
-
             CheckDiagnosticMessages(generatorDiags, DiagnosticSeverity.Info, expectedInfoDiagnostics);
             CheckDiagnosticMessages(generatorDiags, DiagnosticSeverity.Warning, expectedWarningDiagnostics);
             CheckDiagnosticMessages(generatorDiags, DiagnosticSeverity.Error, new string[] { });

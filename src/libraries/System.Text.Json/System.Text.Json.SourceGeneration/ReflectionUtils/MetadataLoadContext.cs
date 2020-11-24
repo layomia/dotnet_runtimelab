@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -12,7 +13,10 @@ namespace System.Reflection
     public class MetadataLoadContext
     {
         private readonly Dictionary<string, IAssemblySymbol> _assemblies = new Dictionary<string, IAssemblySymbol>(StringComparer.OrdinalIgnoreCase);
+
         private readonly Compilation _compilation;
+
+        private IAssemblySymbol? _collectionsAssemblySymbol;
 
         public MetadataLoadContext(Compilation compilation)
         {
@@ -26,7 +30,13 @@ namespace System.Reflection
 
             foreach (var item in assemblies)
             {
-                _assemblies[item.Key.Name] = item.Value!;
+                string key = item.Key.Name;
+                _assemblies[key] = item.Value!;
+
+                if (_collectionsAssemblySymbol == null && key == "System.Collections")
+                {
+                    _collectionsAssemblySymbol = item.Value!;
+                }
             }
 
             CoreAssembly = new AssemblyWrapper(compilation.GetTypeByMetadataName("System.Object")!.ContainingAssembly, this);
@@ -37,7 +47,8 @@ namespace System.Reflection
 
         public Type? Resolve(Type type)
         {
-            string asmName = asmName = type.Assembly.GetName().Name;
+            string asmName = type.Assembly.GetName().Name;
+            IAssemblySymbol assemblySymbol;
 
             if (asmName == "System.Private.CoreLib" || asmName == "mscorlib" || asmName == "System.Runtime")
             {
@@ -45,6 +56,15 @@ namespace System.Reflection
                 if (resolvedType != null)
                 {
                     return resolvedType;
+                }
+
+                if (_collectionsAssemblySymbol != null && typeof(IEnumerable).IsAssignableFrom(type))
+                {
+                    resolvedType = ResolveFromAssembly(type, _collectionsAssemblySymbol);
+                    if (resolvedType != null)
+                    {
+                        return resolvedType;
+                    }
                 }
             }
 
@@ -54,7 +74,7 @@ namespace System.Reflection
                 asmName = typeForwardedFrom.GetConstructorArgument<string>(0);
             }
 
-            if (!_assemblies.TryGetValue(new AssemblyName(asmName).Name, out IAssemblySymbol assemblySymbol))
+            if (!_assemblies.TryGetValue(new AssemblyName(asmName).Name, out assemblySymbol))
             {
                 return null;
             }

@@ -246,11 +246,17 @@ namespace System.Text.Json
             return Deserialize<TValue>(jsonConverter, json, returnType, options, ref state);
         }
 
-        private static TValue? DeserializeUsingMetadata<TValue>(string json, JsonClassInfo jsonClassInfo)
+        private static TValue? DeserializeUsingMetadata<TValue>(string json, JsonClassInfo? jsonClassInfo)
         {
             ReadStack state = default;
 
-            // TODO: perform validation on jsonClassInfo
+            // TODO: this would be when to fallback to regular warm-up code-paths.
+            // For validation during development, we don't expect this to be null.
+            if (jsonClassInfo == null)
+            {
+                throw new ArgumentNullException(nameof(jsonClassInfo));
+            }
+
             state.Initialize(jsonClassInfo);
 
             return Deserialize<TValue>(

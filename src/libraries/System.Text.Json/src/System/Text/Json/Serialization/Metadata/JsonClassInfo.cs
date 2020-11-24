@@ -22,16 +22,6 @@ namespace System.Text.Json.Serialization.Metadata
         /// <summary>
         /// todo
         /// </summary>
-        protected virtual bool RequiresDynamicDeserialization => false;
-
-        /// <summary>
-        /// todo
-        /// </summary>
-        protected virtual bool RequiresDynamicSerialization => false;
-
-        /// <summary>
-        /// todo
-        /// </summary>
         /// <returns></returns>
         public delegate object? ConstructorDelegate();
 

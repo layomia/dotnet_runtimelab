@@ -265,50 +265,6 @@ namespace System.Text.Json.Serialization
         /// todo
         /// </summary>
         /// <param name="type"></param>
-        public virtual JsonClassInfo GetJsonClassInfo(Type type)
-        {
-            if (type == typeof(bool))
-            {
-                return Boolean;
-            }
-            else if (type == typeof(byte[]))
-            {
-                return ByteArray;
-            }
-            else if (type == typeof(DateTimeOffset))
-            {
-                return DateTimeOffset;
-            }
-            else if (type == typeof(DateTime))
-            {
-                return DateTime;
-            }
-            else if (type == typeof(int))
-            {
-                return Int32;
-            }
-            else if (type == typeof(long))
-            {
-                return Int64;
-            }
-            else if (type == typeof(float))
-            {
-                return Single;
-            }
-            else if (type == typeof(double))
-            {
-                return Double;
-            }
-            else if (type == typeof(char))
-            {
-                return Char;
-            }
-            else if (type == typeof(string))
-            {
-                return String;
-            }
-
-            throw new NotSupportedException();
-        }
+        public virtual JsonClassInfo? GetJsonClassInfo(Type type) => throw new NotImplementedException();
     }
 }

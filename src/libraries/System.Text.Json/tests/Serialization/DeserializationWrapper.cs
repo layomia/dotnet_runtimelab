@@ -24,6 +24,8 @@ namespace System.Text.Json.Serialization.Tests
 
         protected internal abstract Task<T> DeserializeWrapper<T>(string json, JsonSerializerOptions options = null);
 
+        protected internal abstract Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null);
+
         protected internal abstract Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null);
 
         private class StringDeserializerWrapper : DeserializationWrapper
@@ -31,6 +33,11 @@ namespace System.Text.Json.Serialization.Tests
             protected internal override Task<T> DeserializeWrapper<T>(string json, JsonSerializerOptions options = null)
             {
                 return Task.FromResult(JsonSerializer.Deserialize<T>(json, options));
+            }
+
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null)
+            {
+                return Task.FromResult(JsonSerializer.Deserialize<T>(utf8Json, options));
             }
 
             protected internal override Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null)
@@ -54,6 +61,9 @@ namespace System.Text.Json.Serialization.Tests
                 }
             }
 
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null) =>
+                throw new NotImplementedException();
+
             protected internal override async Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null)
             {
                 if (options == null)
@@ -75,6 +85,9 @@ namespace System.Text.Json.Serialization.Tests
                 return Task.FromResult(JsonSerializer.Deserialize<T>(json.AsSpan(), options));
             }
 
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null) =>
+                throw new NotImplementedException();
+
             protected internal override Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null)
             {
                 return Task.FromResult(JsonSerializer.Deserialize(json.AsSpan(), type, options));
@@ -84,17 +97,23 @@ namespace System.Text.Json.Serialization.Tests
         private class StringMetadataDeserializerWrapper : DeserializationWrapper
         {
 #if GENERATE_JSON_METADATA
-            protected internal override Task<T> DeserializeWrapper<T>(string json, JsonSerializerOptions options = null)
-            {
-                return Task.FromResult(JsonSerializer.Deserialize<T>(json, new JsonContext(options)));
-            }
+            protected internal override Task<T> DeserializeWrapper<T>(string json, JsonSerializerOptions options = null) =>
+                Task.FromResult(JsonSerializer.Deserialize<T>(json, new JsonContext(options)));
 
-            protected internal override Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null)
-            {
-                return Task.FromResult(JsonSerializer.Deserialize(json, type, new JsonContext(options)));
-            }
+            // TODO: update this to use new ROS<byte> + metadata based overload.
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null) =>
+                Task.FromResult(JsonSerializer.Deserialize<T>(Encoding.UTF8.GetString(utf8Json), new JsonContext(options)));
+
+            protected internal override Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null) =>
+                Task.FromResult(JsonSerializer.Deserialize(json, type, new JsonContext(options)));
 #else
             protected internal override Task<T> DeserializeWrapper<T>(string json, JsonSerializerOptions options = null)
+            {
+                Assert.True(false, "This overload is not supported without JSON metadata generation.");
+                throw new NotSupportedException();
+            }
+
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null)
             {
                 Assert.True(false, "This overload is not supported without JSON metadata generation.");
                 throw new NotSupportedException();
@@ -124,6 +143,9 @@ namespace System.Text.Json.Serialization.Tests
                 }
             }
 
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null) =>
+                throw new NotImplementedException();
+
             protected internal override async Task<object> DeserializeWrapper(string json, Type type, JsonSerializerOptions options = null)
             {
                 if (options == null)
@@ -138,6 +160,12 @@ namespace System.Text.Json.Serialization.Tests
             }
 #else
             protected internal override Task<T> DeserializeWrapper<T>(string json, JsonSerializerOptions options = null)
+            {
+                Assert.True(false, "This overload is not supported without JSON metadata generation.");
+                throw new NotSupportedException();
+            }
+
+            protected internal override Task<T> DeserializeWrapper<T>(byte[] utf8Json, JsonSerializerOptions options = null)
             {
                 Assert.True(false, "This overload is not supported without JSON metadata generation.");
                 throw new NotSupportedException();

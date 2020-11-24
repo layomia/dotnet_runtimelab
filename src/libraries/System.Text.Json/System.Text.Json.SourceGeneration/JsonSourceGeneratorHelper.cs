@@ -24,7 +24,7 @@ namespace System.Text.Json.SourceGeneration
 
         private readonly HashSet<Type> _knownTypes = new();
 
-        private HashSet<Type> _handledTypes = new();
+        private Dictionary<Type, TypeMetadata> _handledTypes = new();
 
         // Contains used JsonTypeInfo<T> identifiers.
         private HashSet<string> _usedCompilableTypeNames = new();
@@ -42,11 +42,6 @@ namespace System.Text.Json.SourceGeneration
             _ienumerableOfTType = metadataLoadContext.Resolve(typeof(IEnumerable<>));
             _dictionaryType = metadataLoadContext.Resolve(typeof(Dictionary<,>));
 
-            if (_listOfTType == null || _dictionaryType == null)
-            {
-                //throw new NotSupportedException();
-            }
-
             PopulateSimpleTypes(metadataLoadContext);
 
             // Initiate diagnostic descriptors.
@@ -55,31 +50,38 @@ namespace System.Text.Json.SourceGeneration
 
         public void GenerateSerializationMetadata(Dictionary<string, Type> serializableTypes)
         {
+            // Add base default instance source.
+            _executionContext.AddSource("JsonContext.g.cs", SourceText.From(BaseJsonContextImplementation, Encoding.UTF8));
+
+#if LAUNCH_DEBUGGER_ON_EXECUTE
             try
             {
-                // Add base default instance source.
-                _executionContext.AddSource("BaseClassInfo.g.cs", SourceText.From(GenerateHelperContextInfo(), Encoding.UTF8));
-
+#endif
                 foreach (KeyValuePair<string, Type> pair in serializableTypes)
                 {
                     TypeMetadata typeMetadata = GetOrAddTypeMetadata(pair.Value);
                     GenerateMetadataForType(typeMetadata);
                 }
+#if LAUNCH_DEBUGGER_ON_EXECUTE
             }
             catch (Exception e)
             {
                 throw e;
             }
+#endif
+
+            // Add GetJsonClassInfo override implementation.
+            _executionContext.AddSource("JsonContext.GetJsonClassInfo.cs", SourceText.From(Get_GetClassInfo_Implementation(), Encoding.UTF8));
         }
 
         public void GenerateMetadataForType(TypeMetadata typeMetadata)
         {
-            if (_handledTypes.Contains(typeMetadata.Type))
+            if (_handledTypes.ContainsKey(typeMetadata.Type))
             {
                 return;
             }
 
-            _handledTypes.Add(typeMetadata.Type);
+            _handledTypes.Add(typeMetadata.Type, typeMetadata);
 
             string metadataFileName = $"{typeMetadata.FriendlyName}.g.cs";
 
@@ -123,7 +125,7 @@ namespace System.Text.Json.SourceGeneration
                         StringBuilder sb = new();
 
                         // Add using statements.
-                        sb.Append(GetUsingStatements(typeMetadata));
+                        sb.Append(GetUsingStatementsString(typeMetadata));
 
                         // Add declarations for JsonContext and the JsonTypeInfo<T> property for the type.
                         sb.Append(Get_ContextClass_And_TypeInfoProperty_Declarations(typeMetadata));
@@ -211,8 +213,7 @@ namespace System.Text.Json.SourceGeneration
             string valueTypeCompilableName = collectionValueTypeMetadata.CompilableName;
             string valueTypeReadableName = collectionValueTypeMetadata.FriendlyName;
 
-            return @$"
-{GetUsingStatements(typeMetadata)}
+            return @$"{GetUsingStatementsString(typeMetadata)}
 
 namespace {GenerationNamespace}
 {{
@@ -251,8 +252,7 @@ namespace {GenerationNamespace}
             string valueTypeCompilableName = collectionValueTypeMetadata.CompilableName;
             string valueTypeReadableName = collectionValueTypeMetadata.FriendlyName;
 
-            return @$"
-{GetUsingStatements(typeMetadata)}
+            return @$"{GetUsingStatementsString(typeMetadata)}
 
 namespace {GenerationNamespace}
 {{
@@ -433,9 +433,7 @@ namespace {GenerationNamespace}
         }
 
         // Base source generation context partial class.
-        public string GenerateHelperContextInfo()
-        {
-            return @$"
+        private string BaseJsonContextImplementation => @$"
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
@@ -457,7 +455,7 @@ namespace {GenerationNamespace}
             }}
         }}
 
-        public JsonContext()
+        private JsonContext()
         {{
         }}
 
@@ -466,10 +464,67 @@ namespace {GenerationNamespace}
         }}
     }}
 }}
-            ";
+";
+
+        private string Get_GetClassInfo_Implementation()
+        {
+            StringBuilder sb = new();
+
+            HashSet<string> usingStatements = new();
+
+            // TODO: should these already be cached somewhere?
+            foreach (TypeMetadata typeMetadata in _handledTypes.Values)
+            {
+                usingStatements.UnionWith(GetUsingStatements(typeMetadata));
+            }
+
+            sb.Append(@$"{GetUsingStatementsString(usingStatements)}
+
+namespace {GenerationNamespace}
+{{
+    public partial class JsonContext : JsonSerializerContext
+    {{
+        public override JsonClassInfo GetJsonClassInfo(Type type)
+        {{");
+
+            // TODO: Make this Dictionary-lookup-based if _handledType.Count > 64.
+            foreach (TypeMetadata typeMetadata in _handledTypes.Values)
+            {
+                if (typeMetadata.ClassType != ClassType.TypeUnsupportedBySourceGen)
+                {
+                    sb.Append($@"
+            if (type == typeof({typeMetadata.CompilableName}))
+            {{
+                return this.{typeMetadata.FriendlyName};
+            }}
+");
+                }
+            }
+
+            sb.Append(@$"
+            return null;
+        }}
+    }}
+}}
+");
+
+            return sb.ToString();
         }
 
-        private static string GetUsingStatements(TypeMetadata typeMetadata)
+        private static string GetUsingStatementsString(TypeMetadata typeMetadata)
+        {
+            HashSet<string> usingStatements = GetUsingStatements(typeMetadata);
+            return GetUsingStatementsString(usingStatements);
+        }
+
+        private static string GetUsingStatementsString(HashSet<string> usingStatements)
+        {
+            string[] usingsArr = usingStatements.ToArray();
+            Array.Sort(usingsArr);
+            return string.Join("\n", usingsArr);
+        }
+
+        private static HashSet<string> GetUsingStatements(TypeMetadata typeMetadata)
         {
             HashSet<string> usingStatements = new();
 
@@ -528,10 +583,7 @@ namespace {GenerationNamespace}
                 }
             }
 
-            string[] usingsArr = usingStatements.ToArray();
-            Array.Sort(usingsArr);
-
-            return string.Join("\n", usingsArr);
+            return usingStatements;
         }
 
         private static string FormatAsUsingStatement(string @namespace) => $"using {@namespace};";
@@ -588,9 +640,12 @@ namespace {GenerationNamespace}
             foreach (PropertyMetadata propertyMetadata in typeMetadata.PropertiesMetadata)
             {
                 string propertyName = propertyMetadata.Name;
-                // TODO? this should be null if ClassType.TypeUnsupportedWithCodeGen,
-                // then utilize mechanism to fallback to dynamic serializer.
-                string typeClassInfo = $"context.{propertyMetadata.TypeMetadata.FriendlyName}";
+
+                TypeMetadata propertyTypeMetadata = propertyMetadata.TypeMetadata;
+
+                string typeClassInfo = propertyTypeMetadata.ClassType == ClassType.TypeUnsupportedBySourceGen
+                    ? "null"
+                    : $"context.{propertyTypeMetadata.FriendlyName}";
 
                 sb.Append($@"
                 _property_{propertyName} = typeInfo.AddProperty(

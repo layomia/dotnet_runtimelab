@@ -24,7 +24,9 @@ namespace System.Text.Json.SourceGeneration
 
         public void Execute(GeneratorExecutionContext executionContext)
         {
-            //Debugger.Launch();
+#if LAUNCH_DEBUGGER_ON_EXECUTE
+            Debugger.Launch();
+#endif
             JsonSerializableSyntaxReceiver receiver = (JsonSerializableSyntaxReceiver)executionContext.SyntaxReceiver;
             MetadataLoadContext metadataLoadContext = new(executionContext.Compilation);
 

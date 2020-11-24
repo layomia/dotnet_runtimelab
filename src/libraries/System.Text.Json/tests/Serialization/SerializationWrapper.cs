@@ -116,7 +116,7 @@ namespace System.Text.Json.Serialization.Tests
 #if GENERATE_JSON_METADATA
             protected internal override Task<string> SerializeWrapper(object value, Type inputType, JsonSerializerOptions options = null)
             {
-                return Task.FromResult(JsonSerializer.Serialize(value, inputType, type, new JsonContext(options)));
+                return Task.FromResult(JsonSerializer.Serialize(value, inputType, new JsonContext(options)));
             }
 
             protected internal override Task<string> SerializeWrapper<T>(T value, JsonSerializerOptions options = null)

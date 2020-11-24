@@ -143,11 +143,18 @@ namespace System.Text.Json
 
         private static ValueTask<TValue?> DeserializeUsingMetadataAsync<TValue>(
             Stream utf8Json,
-            JsonClassInfo jsonClassInfo,
+            JsonClassInfo? jsonClassInfo,
             CancellationToken cancellationToken)
         {
             ReadStack state = default;
-            // TODO: perform validation on jsonClassInfo
+
+            // TODO: this would be when to fallback to regular warm-up code-paths.
+            // For validation during development, we don't expect this to be null.
+            if (jsonClassInfo == null)
+            {
+                throw new ArgumentNullException(nameof(jsonClassInfo));
+            }
+
             state.Initialize(jsonClassInfo, supportContinuation: true);
             JsonConverter converter = jsonClassInfo.PropertyInfoForClassInfo.ConverterBase;
 

@@ -39,4 +39,9 @@
     <Compile Include="TypeMetadata.cs" />
   </ItemGroup>
 
+  <!-- TODO: remove this helper to launch debugger when shipping. -->
+  <PropertyGroup Condition="'$(LaunchDebugger)' == 'true'">
+    <DefineConstants>$(DefineConstants);LAUNCH_DEBUGGER_ON_EXECUTE</DefineConstants>
+  </PropertyGroup>
+
 </Project>

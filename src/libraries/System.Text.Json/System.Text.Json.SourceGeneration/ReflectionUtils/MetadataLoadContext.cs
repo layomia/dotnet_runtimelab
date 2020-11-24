@@ -35,31 +35,35 @@ namespace System.Reflection
 
         public Type Resolve<T>() => Resolve(typeof(T));
 
-        public Type Resolve(Type type)
+        public Type? Resolve(Type type)
         {
-            string asmName = type.Assembly.GetName().Name;
-
-            IAssemblySymbol assemblySymbol;
+            string asmName = asmName = type.Assembly.GetName().Name;
 
             if (asmName == "System.Private.CoreLib" || asmName == "mscorlib" || asmName == "System.Runtime")
             {
-                assemblySymbol = CoreAssembly.Symbol;
+                Type resolvedType = ResolveFromAssembly(type, CoreAssembly.Symbol);
+                if (resolvedType != null)
+                {
+                    return resolvedType;
+                }
             }
-            else
+
+            CustomAttributeData? typeForwardedFrom = type.GetCustomAttributeData(typeof(TypeForwardedFromAttribute));
+            if (typeForwardedFrom != null)
             {
-                var typeForwardedFrom = type.GetCustomAttributeData(typeof(TypeForwardedFromAttribute));
-
-                if (typeForwardedFrom != null)
-                {
-                    asmName = typeForwardedFrom.GetConstructorArgument<string>(0);
-                }
-
-                if (!_assemblies.TryGetValue(new AssemblyName(asmName).Name, out assemblySymbol))
-                {
-                    return null!;
-                }
+                asmName = typeForwardedFrom.GetConstructorArgument<string>(0);
             }
 
+            if (!_assemblies.TryGetValue(new AssemblyName(asmName).Name, out IAssemblySymbol assemblySymbol))
+            {
+                return null;
+            }
+
+            return ResolveFromAssembly(type, assemblySymbol);
+        }
+
+        private Type? ResolveFromAssembly(Type type, IAssemblySymbol assemblySymbol)
+        {
             if (type.IsArray)
             {
                 var typeSymbol = assemblySymbol.GetTypeByMetadataName(type.GetElementType().FullName);
@@ -75,6 +79,7 @@ namespace System.Reflection
             return assemblySymbol.GetTypeByMetadataName(type.FullName)!.AsType(this);
         }
 
+        // TODO: this should be Assembly.
         private AssemblyWrapper CoreAssembly { get; }
         public Assembly MainAssembly { get; }
 

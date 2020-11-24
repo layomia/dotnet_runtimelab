@@ -13,8 +13,7 @@ namespace System.Reflection
         {
             if (typeSymbol == null)
             {
-                // TODO: clean up. For now, we want to know when this can happen.
-                throw new NotSupportedException();
+                return null;
             }
 
             // TODO: what caching can be done here?

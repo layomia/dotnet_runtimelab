@@ -24,8 +24,9 @@ namespace System.Text.Json.SourceGeneration
 
         public void Execute(GeneratorExecutionContext executionContext)
         {
+            //Debugger.Launch();
             JsonSerializableSyntaxReceiver receiver = (JsonSerializableSyntaxReceiver)executionContext.SyntaxReceiver;
-            MetadataLoadContext metadataLoadContext = new MetadataLoadContext(executionContext.Compilation);
+            MetadataLoadContext metadataLoadContext = new(executionContext.Compilation);
 
             // Discover serializable types indicated by JsonSerializableAttribute.
             foreach (CompilationUnitSyntax compilationUnit in receiver.CompilationUnits)

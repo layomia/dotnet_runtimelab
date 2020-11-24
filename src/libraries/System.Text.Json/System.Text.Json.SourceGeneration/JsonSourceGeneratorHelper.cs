@@ -42,6 +42,11 @@ namespace System.Text.Json.SourceGeneration
             _ienumerableOfTType = metadataLoadContext.Resolve(typeof(IEnumerable<>));
             _dictionaryType = metadataLoadContext.Resolve(typeof(Dictionary<,>));
 
+            if (_listOfTType == null || _dictionaryType == null)
+            {
+                //throw new NotSupportedException();
+            }
+
             PopulateSimpleTypes(metadataLoadContext);
 
             // Initiate diagnostic descriptors.
@@ -50,8 +55,6 @@ namespace System.Text.Json.SourceGeneration
 
         public void GenerateSerializationMetadata(Dictionary<string, Type> serializableTypes)
         {
-            //Debugger.Launch();
-
             try
             {
                 // Add base default instance source.
@@ -418,7 +421,14 @@ namespace {GenerationNamespace}
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(ushort)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(uint)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(ulong)));
-            _knownTypes.Add(metadataLoadContext.Resolve(typeof(Uri)));
+
+            // System.Private.Uri may not be loaded in input compilation.
+            Type? uriType = metadataLoadContext.Resolve(typeof(Uri));
+            if (uriType != null)
+            {
+                _knownTypes.Add(uriType);
+            }
+
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(Version)));
         }
 
@@ -524,15 +534,7 @@ namespace {GenerationNamespace}
             return string.Join("\n", usingsArr);
         }
 
-        private static string FormatAsUsingStatement(string @namespace)// => $"using {@namespace};";
-        {
-            if (@namespace == "")
-            {
-
-            }
-
-            return $"using {@namespace};";
-        }
+        private static string FormatAsUsingStatement(string @namespace) => $"using {@namespace};";
 
         // Includes necessary imports, namespace decl and initializes class.
         private static string Get_ContextClass_And_TypeInfoProperty_Declarations(TypeMetadata typeMetadata)
@@ -580,19 +582,22 @@ namespace {GenerationNamespace}
             sb.Append($@"
             public {typeMetadata.FriendlyName}TypeInfo(JsonContext context)
             {{
-                var typeInfo = new JsonObjectInfo<{typeMetadata.CompilableName}>(CreateObjectFunc, SerializeFunc, DeserializeFunc, context.GetOptions());
+                JsonObjectInfo<{typeMetadata.CompilableName}> typeInfo = new(CreateObjectFunc, SerializeFunc, DeserializeFunc, context.GetOptions());
             ");
 
             foreach (PropertyMetadata propertyMetadata in typeMetadata.PropertiesMetadata)
             {
                 string propertyName = propertyMetadata.Name;
+                // TODO? this should be null if ClassType.TypeUnsupportedWithCodeGen,
+                // then utilize mechanism to fallback to dynamic serializer.
+                string typeClassInfo = $"context.{propertyMetadata.TypeMetadata.FriendlyName}";
 
                 sb.Append($@"
                 _property_{propertyName} = typeInfo.AddProperty(
                     ""{propertyName}"",
                     (obj) => {{ return (({typeCompilableName})obj).{propertyName}; }},
                     (obj, value) => {{ (({typeCompilableName})obj).{propertyName} = value; }},
-                    context.{propertyMetadata.TypeMetadata.FriendlyName});
+                    {typeClassInfo});
                 ");
             }
 

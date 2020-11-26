@@ -3,16 +3,16 @@ using System.Text.Json.Serialization;
 
 using TestsNamespace = System.Text.Json.SourceGeneration.Tests;
 
-[module: JsonSerializable(typeof(TestsNamespace.RepeatedTypes.Location))]
-[module: JsonSerializable(typeof(TestsNamespace.Location))]
-[module: JsonSerializable(typeof(TestsNamespace.ActiveOrUpcomingEvent))]
-[module: JsonSerializable(typeof(TestsNamespace.CampaignSummaryViewModel))]
-[module: JsonSerializable(typeof(TestsNamespace.IndexViewModel))]
-[module: JsonSerializable(typeof(TestsNamespace.WeatherForecastWithPOCOs))]
-[module: JsonSerializable(typeof(TestsNamespace.EmptyPoco))]
+//[module: JsonSerializable(typeof(TestsNamespace.RepeatedTypes.Location))]
+//[module: JsonSerializable(typeof(TestsNamespace.Location))]
+//[module: JsonSerializable(typeof(TestsNamespace.ActiveOrUpcomingEvent))]
+//[module: JsonSerializable(typeof(TestsNamespace.CampaignSummaryViewModel))]
+//[module: JsonSerializable(typeof(TestsNamespace.IndexViewModel))]
+//[module: JsonSerializable(typeof(TestsNamespace.WeatherForecastWithPOCOs))]
+//[module: JsonSerializable(typeof(TestsNamespace.EmptyPoco))]
 
 // Ensure no errors when type of member in previously specified object graph is passed as input type to generator.
-[module: JsonSerializable(typeof(TestsNamespace.HighLowTemps))]
+//[module: JsonSerializable(typeof(TestsNamespace.HighLowTemps))]
 
 namespace System.Text.Json.SourceGeneration.Tests.RepeatedTypes
 {

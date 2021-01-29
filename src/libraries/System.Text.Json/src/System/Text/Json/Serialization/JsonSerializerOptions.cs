@@ -34,7 +34,7 @@ namespace System.Text.Json
         {
             get
             {
-                s_defaultCodeGenOptions ??= CreateForCodeGen();
+                s_defaultCodeGenOptions ??= CreateForCodeGen(JsonSerializerDefaults.General);
                 return s_defaultCodeGenOptions;
             }
         }
@@ -127,6 +127,23 @@ namespace System.Text.Json
         /// <param name="defaults"> The <see cref="JsonSerializerDefaults"/> to reason about.</param>
         public JsonSerializerOptions(JsonSerializerDefaults defaults) : this()
         {
+            InitializeUsingDefaults(defaults);
+        }
+
+        /// <summary>
+        /// TODO
+        /// </summary>
+        /// <returns></returns>
+        public static JsonSerializerOptions CreateForCodeGen(JsonSerializerDefaults defaults) => new JsonSerializerOptions(defaults, dummy: true);
+
+        private JsonSerializerOptions(JsonSerializerDefaults defaults, bool dummy)
+        {
+            InitializeUsingDefaults(defaults);
+            Converters = new ConverterList(this);
+        }
+
+        private void InitializeUsingDefaults(JsonSerializerDefaults defaults)
+        {
             if (defaults == JsonSerializerDefaults.Web)
             {
                 _propertyNameCaseInsensitive = true;
@@ -137,24 +154,6 @@ namespace System.Text.Json
             {
                 throw new ArgumentOutOfRangeException(nameof(defaults));
             }
-        }
-
-        /// <summary>
-        /// TODO
-        /// </summary>
-        /// <returns></returns>
-        public static JsonSerializerOptions CreateForCodeGen() => new JsonSerializerOptions(false);
-
-        private JsonSerializerOptions(bool dummy)
-        {
-            Converters = new ConverterList(this);
-        }
-
-        private void InitializeWebDefaults()
-        {
-            _propertyNameCaseInsensitive = true;
-            _jsonPropertyNamingPolicy = JsonNamingPolicy.CamelCase;
-            _numberHandling = JsonNumberHandling.AllowReadingFromString;
         }
 
         /// <summary>
@@ -568,7 +567,9 @@ namespace System.Text.Json
             // https://github.com/dotnet/runtime/issues/32357
             if (!_classes.TryGetValue(type, out JsonClassInfo? result))
             {
-                result = _classes.GetOrAdd(type, new JsonClassInfo(type, this));
+                // TODO: this should be based on feature switch.
+                //result = _classes.GetOrAdd(type, new JsonClassInfo(type, this));
+                throw new NotSupportedException($"Metadata for type {type} not provided to serializer - will not go down reflection-based code path.");
             }
 
             return result;

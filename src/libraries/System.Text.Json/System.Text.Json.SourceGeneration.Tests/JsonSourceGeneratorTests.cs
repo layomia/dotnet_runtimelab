@@ -5,10 +5,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.Json.SourceGeneration.Tests;
 using JsonCodeGeneration;
 using Xunit;
 
+[assembly: JsonSerializable(typeof(object[]))]
 // Specify a type that was already specified in TestClasses.cs to test that the generator handles this scenario well.
 [assembly: JsonSerializable(typeof(CampaignSummaryViewModel))]
 
@@ -326,6 +328,25 @@ namespace System.Text.Json.SourceGeneration.Tests
             json = JsonSerializer.Serialize(myType2, JsonContext.Instance.MyType2);
             myType2 = JsonSerializer.Deserialize(json, JsonContext.Instance.MyType2);
             Assert.Equal(json, JsonSerializer.Serialize(myType2, JsonContext.Instance.MyType2));
+        }
+
+        [Fact]
+        public static void SerializeObjectArray()
+        {
+            IndexViewModel index = CreateIndexViewModel();
+            CampaignSummaryViewModel campaignSummary = CreateCampaignSummaryViewModel();
+
+            // Manually include metadata for these types in options instance since converters have been trimmed out.
+            ((JsonObjectInfo<IndexViewModel>)JsonContext.Instance.IndexViewModel).CompleteInitialization();
+            ((JsonObjectInfo<CampaignSummaryViewModel>)JsonContext.Instance.CampaignSummaryViewModel).CompleteInitialization();
+
+            string json = JsonSerializer.Serialize(new object[] { index, campaignSummary }, JsonContext.Instance.ObjectArray);
+            object[] arr = JsonSerializer.Deserialize(json, JsonContext.Instance.ObjectArray);
+
+            JsonElement indexAsJsonElement = (JsonElement)arr[0];
+            JsonElement campaignSummeryAsJsonElement = (JsonElement)arr[1];
+            VerifyIndexViewModel(index, JsonSerializer.Deserialize(indexAsJsonElement.GetRawText(), JsonContext.Instance.IndexViewModel));
+            VerifyCampaignSummaryViewModel(campaignSummary, JsonSerializer.Deserialize(campaignSummeryAsJsonElement.GetRawText(), JsonContext.Instance.CampaignSummaryViewModel));
         }
     }
 }

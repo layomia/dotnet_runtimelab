@@ -21,7 +21,9 @@ namespace System.Text.Json.SourceGeneration
         private readonly Type _nullableOfTType;
 
         // Generation namespace for source generation code.
-        const string GenerationNamespace = "JsonCodeGeneration";
+        private const string GenerationNamespace = "JsonCodeGeneration";
+
+        private const string JsonContextDeclarationSource = "internal partial class JsonContext : JsonSerializerContext";
 
         private readonly HashSet<Type> _knownTypes = new();
 
@@ -59,7 +61,7 @@ namespace System.Text.Json.SourceGeneration
         public void GenerateSerializationMetadata(Dictionary<string, Type> serializableTypes)
         {
             // Add base default instance source.
-            _executionContext.AddSource("JsonContext.g.cs", SourceText.From(BaseJsonContextImplementation, Encoding.UTF8));
+            AddBaseJsonContextImplementation(_executionContext);
 
 #if LAUNCH_DEBUGGER_ON_EXECUTE
             try
@@ -74,12 +76,18 @@ namespace System.Text.Json.SourceGeneration
             }
             catch (Exception e)
             {
+                Debugger.Break();
                 throw e;
             }
 #endif
 
             // Add GetJsonClassInfo override implementation.
             _executionContext.AddSource("JsonContext.GetJsonClassInfo.cs", SourceText.From(Get_GetClassInfo_Implementation(), Encoding.UTF8));
+        }
+
+        public static void AddBaseJsonContextImplementation(GeneratorExecutionContext executionContext)
+        {
+            executionContext.AddSource("JsonContext.g.cs", SourceText.From(BaseJsonContextImplementation, Encoding.UTF8));
         }
 
         public void GenerateSerializationMetadataForType(TypeMetadata typeMetadata)
@@ -179,8 +187,6 @@ namespace System.Text.Json.SourceGeneration
                             metadataFileName,
                             SourceText.From(sb.ToString(), Encoding.UTF8));
 
-                        _executionContext.ReportDiagnostic(Diagnostic.Create(_generatedTypeClass, Location.None, new string[] { typeMetadata.CompilableName }));
-
                         // If type had its JsonTypeInfo name changed, report to the user.
                         if (type.Name != typeMetadata.CompilableName)
                         {
@@ -231,7 +237,7 @@ namespace System.Text.Json.SourceGeneration
 
 namespace {GenerationNamespace}
 {{
-    public partial class JsonContext : JsonSerializerContext
+    {JsonContextDeclarationSource}
     {{
         private JsonTypeInfo<{typeCompilableName}> _{typeFriendlyName};
         public JsonTypeInfo<{typeCompilableName}> {typeFriendlyName}
@@ -280,7 +286,7 @@ namespace {GenerationNamespace}
 
 namespace {GenerationNamespace}
 {{
-    public partial class JsonContext : JsonSerializerContext
+    {JsonContextDeclarationSource}
     {{
         private JsonTypeInfo<{typeCompilableName}> _{typeFriendlyName};
         public JsonTypeInfo<{typeCompilableName}> {typeFriendlyName}
@@ -451,6 +457,7 @@ namespace {GenerationNamespace}
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(short)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(int)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(long)));
+            _knownTypes.Add(metadataLoadContext.Resolve(typeof(object)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(sbyte)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(float)));
             _knownTypes.Add(metadataLoadContext.Resolve(typeof(string)));
@@ -470,13 +477,13 @@ namespace {GenerationNamespace}
         }
 
         // Base source generation context partial class.
-        private string BaseJsonContextImplementation => @$"
+        private static string BaseJsonContextImplementation => @$"
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace {GenerationNamespace}
 {{
-    public partial class JsonContext : JsonSerializerContext
+    {JsonContextDeclarationSource}
     {{
         private static JsonContext s_instance;
         public static JsonContext Instance
@@ -519,7 +526,7 @@ namespace {GenerationNamespace}
 
 namespace {GenerationNamespace}
 {{
-    public partial class JsonContext : JsonSerializerContext
+    {JsonContextDeclarationSource}
     {{
         public override JsonClassInfo GetJsonClassInfo(Type type)
         {{");
@@ -636,7 +643,7 @@ namespace {GenerationNamespace}
 
 namespace {GenerationNamespace}
 {{
-    public partial class JsonContext : JsonSerializerContext
+    {JsonContextDeclarationSource}
     {{
         private {typeFriendlyName}TypeInfo _{typeFriendlyName};
         public JsonTypeInfo<{typeCompilableName}> {typeFriendlyName}

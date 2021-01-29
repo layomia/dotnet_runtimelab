@@ -9,7 +9,7 @@ namespace System.Text.Json.Serialization.Converters
 {
     /// <summary>
     /// Implementation of <cref>JsonObjectConverter{T}</cref> that supports the deserialization
-    /// of JSON objects using parameterized constructors.
+    /// of JSON objects using parameterless constructors.
     /// </summary>
     internal sealed class ObjectCodeGenConverter<T> : ObjectDefaultConverter<T>
     {

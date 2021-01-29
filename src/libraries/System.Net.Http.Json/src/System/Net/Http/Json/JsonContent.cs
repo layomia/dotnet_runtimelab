@@ -19,7 +19,7 @@ namespace System.Net.Http.Json
         private static MediaTypeHeaderValue DefaultMediaType
             => new MediaTypeHeaderValue(JsonMediaType) { CharSet = "utf-8" };
 
-        internal static readonly JsonSerializerOptions s_defaultSerializerOptions = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+        internal static readonly JsonSerializerOptions s_defaultSerializerOptions = JsonSerializerOptions.CreateForCodeGen(JsonSerializerDefaults.Web);
 
         private readonly JsonSerializerOptions? _jsonSerializerOptions;
         public Type ObjectType { get; }

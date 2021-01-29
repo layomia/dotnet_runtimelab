@@ -313,6 +313,33 @@ namespace System.Text.Json.Serialization
             }
         }
 
+        private JsonTypeInfo<object>? _object;
+        private static JsonTypeInfo<object>? s_object;
+        /// <summary>
+        /// todo
+        /// </summary>
+        public JsonTypeInfo<object> Object
+        {
+            get
+            {
+                if (_object == null)
+                {
+                    {
+                        if (s_object == null)
+                        {
+                            var valueInfo = new JsonValueInfo<object>(new ObjectConverter(), _options);
+                            valueInfo.CompleteInitialization();
+                            s_object = valueInfo;
+                        }
+
+                        _object = s_object;
+                    }
+                }
+
+                return _object;
+            }
+        }
+
         private JsonTypeInfo<float>? _single;
         private static JsonTypeInfo<float>? s_single;
         /// <summary>

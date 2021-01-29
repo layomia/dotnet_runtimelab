@@ -47,7 +47,8 @@ namespace System.Text.Json.Serialization.Metadata
             }
             Deserialize = deserializeFunc;
 
-            JsonConverter converter = new ObjectCodeGenConverter<T>();
+            JsonConverter converter = new ObjectDefaultConverter<T>();
+
             ConverterBase = converter;
             PropertyInfoForClassInfo = CreatePropertyInfoForClassInfo(Type, Type, converter, Options);
         }

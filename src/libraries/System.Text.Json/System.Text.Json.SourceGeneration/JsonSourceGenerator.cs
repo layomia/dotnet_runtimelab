@@ -63,6 +63,8 @@ namespace System.Text.Json.SourceGeneration
 
             if (SerializableTypes == null)
             {
+                // Return empty JsonContext object to avoid compilation errors due to "using {generationNamespace}" without having any serializable types.
+                JsonSourceGeneratorHelper.AddBaseJsonContextImplementation(executionContext);
                 return;
             }
 

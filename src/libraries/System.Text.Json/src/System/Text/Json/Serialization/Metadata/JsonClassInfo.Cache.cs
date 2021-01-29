@@ -6,7 +6,6 @@ using System.Diagnostics;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text.Json.Serialization;
 
 namespace System.Text.Json.Serialization.Metadata
 {
@@ -52,37 +51,6 @@ namespace System.Text.Json.Serialization.Metadata
         // Use an array (instead of List<T>) for highest performance.
         private volatile PropertyRef[]? _propertyRefsSorted;
 
-        internal static JsonPropertyInfo AddProperty(
-            MemberInfo memberInfo,
-            Type memberType,
-            Type parentClassType,
-            JsonNumberHandling? parentTypeNumberHandling,
-            JsonSerializerOptions options)
-        {
-            JsonIgnoreCondition? ignoreCondition = JsonPropertyInfo.GetAttribute<JsonIgnoreAttribute>(memberInfo)?.Condition;
-            if (ignoreCondition == JsonIgnoreCondition.Always)
-            {
-                return JsonPropertyInfo.CreateIgnoredPropertyPlaceholder(memberInfo, options);
-            }
-
-            JsonConverter converter = GetConverter(
-                memberType,
-                parentClassType,
-                memberInfo,
-                out Type runtimeType,
-                options);
-
-            return CreateProperty(
-                declaredPropertyType: memberType,
-                runtimePropertyType: runtimeType,
-                memberInfo,
-                parentClassType,
-                converter,
-                options,
-                parentTypeNumberHandling,
-                ignoreCondition);
-        }
-
         internal static JsonPropertyInfo CreateProperty(
             Type declaredPropertyType,
             Type? runtimePropertyType,
@@ -112,7 +80,7 @@ namespace System.Text.Json.Serialization.Metadata
 
         /// <summary>
         /// Create a <see cref="JsonPropertyInfo"/> for a given Type.
-        /// See <seealso cref="JsonClassInfo.PropertyInfoForClassInfo"/>.
+        /// See <seealso cref="PropertyInfoForClassInfo"/>.
         /// </summary>
         internal static JsonPropertyInfo CreatePropertyInfoForClassInfo(
             Type declaredPropertyType,
@@ -120,17 +88,13 @@ namespace System.Text.Json.Serialization.Metadata
             JsonConverter converter,
             JsonSerializerOptions options)
         {
-            // todo: avoid this reflection-based code-path for codegen scenarios
-            JsonNumberHandling? numberHandling = GetNumberHandlingForType(declaredPropertyType);
-
             JsonPropertyInfo jsonPropertyInfo = CreateProperty(
                 declaredPropertyType: declaredPropertyType,
                 runtimePropertyType: runtimePropertyType,
                 memberInfo: null, // Not a real property so this is null.
                 parentClassType: JsonClassInfo.ObjectType, // a dummy value (not used)
                 converter: converter,
-                options,
-                parentTypeNumberHandling: numberHandling);
+                options);
 
             Debug.Assert(jsonPropertyInfo.IsForClassInfo);
 

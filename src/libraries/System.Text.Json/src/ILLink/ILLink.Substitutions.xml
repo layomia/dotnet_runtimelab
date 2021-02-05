@@ -1,0 +1,7 @@
+<linker>
+  <assembly fullname="System.Text.Json" feature="System.Text.Json.DisableJsonSerializerDynamicFallback" featurevalue="false">
+    <type fullname="System.Text.Json.JsonHelpers">
+      <method signature="System.Boolean get_DisableJsonSerializerDynamicFallback()" body="stub" value="false" />
+    </type>
+  </assembly>
+</linker>

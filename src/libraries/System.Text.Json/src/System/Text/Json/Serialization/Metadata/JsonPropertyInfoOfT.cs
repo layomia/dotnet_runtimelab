@@ -67,15 +67,73 @@ namespace System.Text.Json.Serialization.Metadata
                 parentTypeNumberHandling,
                 options);
 
-            IsForClassInfo = true;
-            HasGetter = true;
-            HasSetter = true;
+            if (memberInfo != null)
+            {
+                if (!JsonHelpers.DisableJsonSerializerDynamicFallback)
+                {
+                    InitializeAccessorsWithReflection(memberInfo);
+                }
+            }
+            else
+            {
+                IsForClassInfo = true;
+                HasGetter = true;
+                HasSetter = true;
+            }
 
             _converterIsExternalAndPolymorphic = !converter.IsInternalConverter && DeclaredPropertyType != converter.TypeToConvert;
             PropertyTypeCanBeNull = DeclaredPropertyType.CanBeNull();
             _propertyTypeEqualsTypeToConvert = typeof(T) == DeclaredPropertyType;
 
             GetPolicies(ignoreCondition, parentTypeNumberHandling, defaultValueIsNull: PropertyTypeCanBeNull);
+        }
+
+        private void InitializeAccessorsWithReflection(MemberInfo memberInfo)
+        {
+            switch (memberInfo)
+            {
+                case PropertyInfo propertyInfo:
+                    {
+                        bool useNonPublicAccessors = GetAttribute<JsonIncludeAttribute>(propertyInfo) != null;
+
+                        MethodInfo? getMethod = propertyInfo.GetMethod;
+                        if (getMethod != null && (getMethod.IsPublic || useNonPublicAccessors))
+                        {
+                            HasGetter = true;
+                            Get = Options.MemberAccessorStrategy.CreatePropertyGetter<T>(propertyInfo);
+                        }
+
+                        MethodInfo? setMethod = propertyInfo.SetMethod;
+                        if (setMethod != null && (setMethod.IsPublic || useNonPublicAccessors))
+                        {
+                            HasSetter = true;
+                            Set = Options.MemberAccessorStrategy.CreatePropertySetter<T>(propertyInfo);
+                        }
+
+                        break;
+                    }
+
+                case FieldInfo fieldInfo:
+                    {
+                        Debug.Assert(fieldInfo.IsPublic);
+
+                        HasGetter = true;
+                        Get = Options.MemberAccessorStrategy.CreateFieldGetter<T>(fieldInfo);
+
+                        if (!fieldInfo.IsInitOnly)
+                        {
+                            HasSetter = true;
+                            Set = Options.MemberAccessorStrategy.CreateFieldSetter<T>(fieldInfo);
+                        }
+
+                        break;
+                    }
+
+                default:
+                    {
+                        throw new InvalidOperationException();
+                    }
+            }
         }
 
         /// <summary>

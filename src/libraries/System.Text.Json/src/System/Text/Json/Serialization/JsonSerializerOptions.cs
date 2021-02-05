@@ -567,9 +567,14 @@ namespace System.Text.Json
             // https://github.com/dotnet/runtime/issues/32357
             if (!_classes.TryGetValue(type, out JsonClassInfo? result))
             {
-                // TODO: this should be based on feature switch.
-                //result = _classes.GetOrAdd(type, new JsonClassInfo(type, this));
-                throw new NotSupportedException($"Metadata for type {type} not provided to serializer - will not go down reflection-based code path.");
+                if (JsonHelpers.DisableJsonSerializerDynamicFallback)
+                {
+                    throw new NotSupportedException($"Metadata for type {type} not provided to serializer - will not go down reflection-based code path.");
+                }
+                else
+                {
+                    result = _classes.GetOrAdd(type, new JsonClassInfo(type, this));
+                }
             }
 
             return result;

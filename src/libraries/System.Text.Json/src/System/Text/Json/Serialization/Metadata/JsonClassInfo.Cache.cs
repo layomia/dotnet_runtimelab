@@ -51,6 +51,37 @@ namespace System.Text.Json.Serialization.Metadata
         // Use an array (instead of List<T>) for highest performance.
         private volatile PropertyRef[]? _propertyRefsSorted;
 
+        internal static JsonPropertyInfo AddProperty(
+            MemberInfo memberInfo,
+            Type memberType,
+            Type parentClassType,
+            JsonNumberHandling? parentTypeNumberHandling,
+            JsonSerializerOptions options)
+        {
+            JsonIgnoreCondition? ignoreCondition = JsonPropertyInfo.GetAttribute<JsonIgnoreAttribute>(memberInfo)?.Condition;
+            if (ignoreCondition == JsonIgnoreCondition.Always)
+            {
+                return JsonPropertyInfo.CreateIgnoredPropertyPlaceholder(memberInfo, options);
+            }
+
+            JsonConverter converter = GetConverter(
+                memberType,
+                parentClassType,
+                memberInfo,
+                out Type runtimeType,
+                options);
+
+            return CreateProperty(
+                declaredPropertyType: memberType,
+                runtimePropertyType: runtimeType,
+                memberInfo,
+                parentClassType,
+                converter,
+                options,
+                parentTypeNumberHandling,
+                ignoreCondition);
+        }
+
         internal static JsonPropertyInfo CreateProperty(
             Type declaredPropertyType,
             Type? runtimePropertyType,
@@ -88,16 +119,20 @@ namespace System.Text.Json.Serialization.Metadata
             JsonConverter converter,
             JsonSerializerOptions options)
         {
+            JsonNumberHandling? numberHandling = JsonHelpers.DisableJsonSerializerDynamicFallback
+                ? null // TODO: populate this properly in source gen
+                : GetNumberHandlingForType(declaredPropertyType);
+
             JsonPropertyInfo jsonPropertyInfo = CreateProperty(
                 declaredPropertyType: declaredPropertyType,
                 runtimePropertyType: runtimePropertyType,
                 memberInfo: null, // Not a real property so this is null.
                 parentClassType: JsonClassInfo.ObjectType, // a dummy value (not used)
                 converter: converter,
-                options);
+                options,
+                parentTypeNumberHandling: numberHandling);
 
             Debug.Assert(jsonPropertyInfo.IsForClassInfo);
-
             return jsonPropertyInfo;
         }
 

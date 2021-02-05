@@ -187,6 +187,8 @@ namespace System.Text.Json.SourceGeneration
                             metadataFileName,
                             SourceText.From(sb.ToString(), Encoding.UTF8));
 
+                        _executionContext.ReportDiagnostic(Diagnostic.Create(_generatedTypeClass, Location.None, new string[] { typeMetadata.CompilableName }));
+
                         // If type had its JsonTypeInfo name changed, report to the user.
                         if (type.Name != typeMetadata.CompilableName)
                         {

@@ -2,6 +2,7 @@
 // The .NET Foundation licenses this file to you under the MIT license.
 // See the LICENSE file in the project root for more information.
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
@@ -33,7 +34,7 @@ namespace System.Text.Json.SourceGeneration
             JsonSerializableSyntaxReceiver receiver = (JsonSerializableSyntaxReceiver)executionContext.SyntaxReceiver;
             MetadataLoadContext metadataLoadContext = new(executionContext.Compilation);
 
-            TypeExtensions.NullableOfTType = metadataLoadContext.Resolve(typeof(Nullable<>));
+            TypeExtensions.InitializeTypes(metadataLoadContext);
 
             // Discover serializable types indicated by JsonSerializableAttribute.
             foreach (CompilationUnitSyntax compilationUnit in receiver.CompilationUnits)

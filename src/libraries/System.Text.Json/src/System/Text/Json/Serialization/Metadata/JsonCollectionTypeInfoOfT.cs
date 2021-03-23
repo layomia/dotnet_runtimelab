@@ -18,7 +18,7 @@ namespace System.Text.Json.Serialization.Metadata
         /// <param name="numberHandling"></param>
         /// <param name="options"></param>
         public JsonCollectionTypeInfo(
-            ConstructorDelegate createObjectFunc,
+            ConstructorDelegate? createObjectFunc,
             JsonConverter<T> converter,
             JsonClassInfo elementInfo,
             JsonNumberHandling? numberHandling,

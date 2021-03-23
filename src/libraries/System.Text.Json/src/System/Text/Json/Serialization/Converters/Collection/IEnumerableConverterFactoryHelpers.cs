@@ -4,7 +4,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using System.Text.Json.Serialization.Metadata;
 
 namespace System.Text.Json.Serialization
 {
@@ -40,64 +39,6 @@ namespace System.Text.Json.Serialization
         private const string CreateRangeMethodNameForDictionary = "CreateRange`2";
 
         private const string ImmutableCollectionsAssembly = "System.Collections.Immutable";
-
-        internal static Type? GetCompatibleGenericBaseClass(this Type type, Type baseType)
-        {
-            Debug.Assert(baseType.IsGenericType);
-            Debug.Assert(!baseType.IsInterface);
-            Debug.Assert(baseType == baseType.GetGenericTypeDefinition());
-
-            Type? baseTypeToCheck = type;
-
-            while (baseTypeToCheck != null && baseTypeToCheck != JsonClassInfo.ObjectType)
-            {
-                if (baseTypeToCheck.IsGenericType)
-                {
-                    Type genericTypeToCheck = baseTypeToCheck.GetGenericTypeDefinition();
-                    if (genericTypeToCheck == baseType)
-                    {
-                        return baseTypeToCheck;
-                    }
-                }
-
-                baseTypeToCheck = baseTypeToCheck.BaseType;
-            }
-
-            return null;
-        }
-
-        internal static Type? GetCompatibleGenericInterface(this Type type, Type interfaceType)
-        {
-            Debug.Assert(interfaceType.IsGenericType);
-            Debug.Assert(interfaceType.IsInterface);
-            Debug.Assert(interfaceType == interfaceType.GetGenericTypeDefinition());
-
-            Type interfaceToCheck = type;
-
-            if (interfaceToCheck.IsGenericType)
-            {
-                interfaceToCheck = interfaceToCheck.GetGenericTypeDefinition();
-            }
-
-            if (interfaceToCheck == interfaceType)
-            {
-                return type;
-            }
-
-            foreach (Type typeToCheck in type.GetInterfaces())
-            {
-                if (typeToCheck.IsGenericType)
-                {
-                    Type genericInterfaceToCheck = typeToCheck.GetGenericTypeDefinition();
-                    if (genericInterfaceToCheck == interfaceType)
-                    {
-                        return typeToCheck;
-                    }
-                }
-            }
-
-            return null;
-        }
 
         public static bool IsImmutableDictionaryType(this Type type)
         {

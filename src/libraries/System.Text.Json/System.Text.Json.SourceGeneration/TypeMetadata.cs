@@ -32,7 +32,7 @@ namespace System.Text.Json.SourceGeneration
         /// </summary>
         public List<PropertyMetadata>? PropertiesMetadata { get; private set; }
 
-        public CollectionType CollectionType { get; private set; }
+        public string? CollectionType { get; private set; }
 
         public TypeMetadata? CollectionKeyTypeMetadata { get; private set; }
 
@@ -51,7 +51,7 @@ namespace System.Text.Json.SourceGeneration
             bool canBeDynamic,
             JsonNumberHandling? numberHandling,
             List<PropertyMetadata>? propertiesMetadata,
-            CollectionType collectionType,
+            string? collectionType,
             TypeMetadata? collectionKeyTypeMetadata,
             TypeMetadata? collectionValueTypeMetadata,
             ObjectConstructionStrategy constructionStrategy,

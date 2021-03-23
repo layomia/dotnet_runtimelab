@@ -16,7 +16,6 @@ namespace System.Text.Json.Serialization.Metadata
         /// <summary>
         /// todo
         /// </summary>
-        // TODO: Should this return JsonCollectionTypeInfo<T>?
         public static JsonCollectionTypeInfo<T[]> GetArray(JsonClassInfo elementInfo, JsonSerializerContext context, JsonNumberHandling? numberHandling)
         {
             if (s_array == null)

@@ -10,7 +10,7 @@ using Microsoft.CodeAnalysis;
 
 namespace System.Reflection
 {
-    public static class TypeExtensions 
+    internal static partial class TypeExtensions
     {
         public static string GetUniqueCompilableTypeName(this Type type) => GetCompilableTypeName(type, type.FullName);
 

@@ -1,11 +1,12 @@
 // Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
+using System.Threading.Tasks;
 using Xunit;
 
 namespace System.Text.Json.Serialization.Tests
 {
-    public static partial class CustomConverterTests
+    public abstract partial class CustomConverterTests
     {
         /// <summary>
         /// Pass additional information to a converter through an attribute on a property.
@@ -37,15 +38,15 @@ namespace System.Text.Json.Serialization.Tests
         }
 
         [Fact]
-        public static void CustomAttributeExtraInformation()
+        public async Task CustomAttributeExtraInformation()
         {
             const string json = @"{""Point1"":""1,2""}";
 
-            ClassWithPointConverterAttribute obj = JsonSerializer.Deserialize<ClassWithPointConverterAttribute>(json);
+            ClassWithPointConverterAttribute obj = await Deserializer.DeserializeWrapper<ClassWithPointConverterAttribute>(json);
             Assert.Equal(11, obj.Point1.X);
             Assert.Equal(12, obj.Point1.Y);
 
-            string jsonSerialized = JsonSerializer.Serialize(obj);
+            string jsonSerialized = await Serializer.SerializeWrapper(obj);
             Assert.Equal(json, jsonSerialized);
         }
 
@@ -56,15 +57,15 @@ namespace System.Text.Json.Serialization.Tests
         }
 
         [Fact]
-        public static void CustomAttributeOnProperty()
+        public async Task CustomAttributeOnProperty()
         {
             const string json = @"{""Point1"":""1,2""}";
 
-            ClassWithJsonConverterAttribute obj = JsonSerializer.Deserialize<ClassWithJsonConverterAttribute>(json);
+            ClassWithJsonConverterAttribute obj = await Deserializer.DeserializeWrapper<ClassWithJsonConverterAttribute>(json);
             Assert.Equal(1, obj.Point1.X);
             Assert.Equal(2, obj.Point1.Y);
 
-            string jsonSerialized = JsonSerializer.Serialize(obj);
+            string jsonSerialized = await Serializer.SerializeWrapper(obj);
             Assert.Equal(json, jsonSerialized);
         }
 
@@ -124,15 +125,15 @@ namespace System.Text.Json.Serialization.Tests
         }
 
         [Fact]
-        public static void CustomAttributeOnType()
+        public async Task CustomAttributeOnType()
         {
             const string json = @"""1,2""";
 
-            AttributedPoint point = JsonSerializer.Deserialize<AttributedPoint>(json);
+            AttributedPoint point = await Deserializer.DeserializeWrapper<AttributedPoint>(json);
             Assert.Equal(1, point.X);
             Assert.Equal(2, point.Y);
 
-            string jsonSerialized = JsonSerializer.Serialize(point);
+            string jsonSerialized = await Serializer.SerializeWrapper(point);
             Assert.Equal(json, jsonSerialized);
         }
 
@@ -163,45 +164,45 @@ namespace System.Text.Json.Serialization.Tests
         }
 
         [Fact]
-        public static void CustomAttributeOnTypeAndProperty()
+        public async Task CustomAttributeOnTypeAndProperty()
         {
             const string json = @"{""Point1"":""1,2""}";
 
-            ClassWithJsonConverterAttributeOverride point = JsonSerializer.Deserialize<ClassWithJsonConverterAttributeOverride>(json);
+            ClassWithJsonConverterAttributeOverride point = await Deserializer.DeserializeWrapper<ClassWithJsonConverterAttributeOverride>(json);
 
             // The property attribute overrides the type attribute.
             Assert.Equal(101, point.Point1.X);
             Assert.Equal(102, point.Point1.Y);
 
-            string jsonSerialized = JsonSerializer.Serialize(point);
+            string jsonSerialized = await Serializer.SerializeWrapper(point);
             Assert.Equal(json, jsonSerialized);
         }
 
         [Fact]
-        public static void CustomAttributeOnPropertyAndRuntime()
+        public async Task CustomAttributeOnPropertyAndRuntime()
         {
             const string json = @"{""Point1"":""1,2""}";
 
             var options = new JsonSerializerOptions();
             options.Converters.Add(new AttributedPointConverter(200));
 
-            ClassWithJsonConverterAttributeOverride point = JsonSerializer.Deserialize<ClassWithJsonConverterAttributeOverride>(json);
+            ClassWithJsonConverterAttributeOverride point = await Deserializer.DeserializeWrapper<ClassWithJsonConverterAttributeOverride>(json);
 
             // The property attribute overrides the runtime.
             Assert.Equal(101, point.Point1.X);
             Assert.Equal(102, point.Point1.Y);
 
-            string jsonSerialized = JsonSerializer.Serialize(point);
+            string jsonSerialized = await Serializer.SerializeWrapper(point);
             Assert.Equal(json, jsonSerialized);
         }
 
         [Fact]
-        public static void CustomAttributeOnTypeAndRuntime()
+        public async Task CustomAttributeOnTypeAndRuntime()
         {
             const string json = @"""1,2""";
 
             // Baseline
-            AttributedPoint point = JsonSerializer.Deserialize<AttributedPoint>(json);
+            AttributedPoint point = await Deserializer.DeserializeWrapper<AttributedPoint>(json);
             Assert.Equal(1, point.X);
             Assert.Equal(2, point.Y);
             Assert.Equal(json, JsonSerializer.Serialize(point));
@@ -210,13 +211,13 @@ namespace System.Text.Json.Serialization.Tests
             var options = new JsonSerializerOptions();
             options.Converters.Add(new AttributedPointConverter(200));
 
-            point = JsonSerializer.Deserialize<AttributedPoint>(json, options);
+            point = await Deserializer.DeserializeWrapper<AttributedPoint>(json, options);
 
             // The runtime overrides the type attribute.
             Assert.Equal(201, point.X);
             Assert.Equal(202, point.Y);
 
-            string jsonSerialized = JsonSerializer.Serialize(point, options);
+            string jsonSerialized = await Serializer.SerializeWrapper(point, options);
             Assert.Equal(json, jsonSerialized);
         }
     }
